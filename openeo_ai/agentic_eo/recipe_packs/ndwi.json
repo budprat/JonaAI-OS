@@ -1,0 +1,13 @@
+{
+  "variable": "ndwi",
+  "recipe_version": 1,
+  "thresholds": {
+    "drought_drawdown_ha_per_week": {
+      "value": -25.0,
+      "unit": "ha_per_week",
+      "comparator": "<=",
+      "applies_at": "report.actions",
+      "source": "RESEARCH §4 drought trigger; report.py + planner analyze prose"
+    }
+  }
+}

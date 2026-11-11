@@ -1,0 +1,524 @@
+{
+  "version": "1.1",
+  "description": "Ground truth trajectories for scoring agent tool calling quality. v1.1 adds expected_outcome for outcome-based scoring.",
+  "ground_truths": [
+    {
+      "query": "Show NDVI for Berlin in 2024",
+      "domain": "vegetation",
+      "expected_tools": [
+        "recommend_collection",
+        "resolve_location",
+        "openeo_parse_temporal",
+        "openeo_generate_graph",
+        "openeo_create_job",
+        "openeo_start_job",
+        "openeo_get_results",
+        "viz_show_map"
+      ],
+      "expected_params": {
+        "recommend_collection": {
+          "description": "NDVI vegetation analysis"
+        },
+        "resolve_location": {
+          "location_name": "Berlin"
+        },
+        "openeo_parse_temporal": {
+          "description": "2024"
+        },
+        "openeo_generate_graph": {
+          "description": "NDVI",
+          "collection": "sentinel-2-l2a",
+          "cloud_mask": true
+        }
+      },
+      "acceptable_alternatives": [
+        [
+          "recommend_collection",
+          "resolve_location",
+          "openeo_parse_temporal",
+          "openeo_compose_graph",
+          "openeo_create_job",
+          "openeo_start_job",
+          "openeo_get_results",
+          "viz_show_map"
+        ]
+      ],
+      "expected_outcome": {
+        "job_succeeded": true,
+        "expected_format": "GTiff",
+        "expected_bands": ["ndvi"],
+        "value_range": [-1.0, 1.0],
+        "has_spatial_extent": true,
+        "has_temporal_extent": true,
+        "min_tool_calls": 4,
+        "max_tool_calls": 12,
+        "required_capabilities": [
+          "location_resolution",
+          "graph_building",
+          "job_execution",
+          "result_retrieval"
+        ]
+      }
+    },
+    {
+      "query": "Analyze flood extent in Mumbai July 2024",
+      "domain": "water",
+      "expected_tools": [
+        "recommend_collection",
+        "resolve_location",
+        "openeo_parse_temporal",
+        "openeo_algorithm",
+        "openeo_create_job",
+        "openeo_start_job",
+        "openeo_get_results",
+        "interpret_result"
+      ],
+      "expected_params": {
+        "resolve_location": {
+          "location_name": "Mumbai"
+        },
+        "openeo_parse_temporal": {
+          "description": "July 2024"
+        },
+        "openeo_algorithm": {
+          "algorithm": "flood_extent",
+          "collection": "sentinel-2-l2a"
+        }
+      },
+      "acceptable_alternatives": [
+        [
+          "recommend_collection",
+          "resolve_location",
+          "openeo_parse_temporal",
+          "openeo_generate_graph",
+          "openeo_create_job",
+          "openeo_start_job",
+          "openeo_get_results",
+          "interpret_result"
+        ]
+      ],
+      "expected_outcome": {
+        "job_succeeded": true,
+        "expected_format": "GTiff",
+        "expected_bands": ["mndwi"],
+        "value_range": [-1.0, 1.0],
+        "has_spatial_extent": true,
+        "has_temporal_extent": true,
+        "min_tool_calls": 4,
+        "max_tool_calls": 12,
+        "required_capabilities": [
+          "location_resolution",
+          "graph_building",
+          "job_execution",
+          "result_retrieval"
+        ]
+      }
+    },
+    {
+      "query": "Burn severity before and after fire in Maui August 2023",
+      "domain": "fire",
+      "expected_tools": [
+        "recommend_collection",
+        "resolve_location",
+        "openeo_parse_temporal",
+        "openeo_algorithm",
+        "openeo_create_job",
+        "openeo_start_job",
+        "openeo_get_results",
+        "interpret_result"
+      ],
+      "expected_params": {
+        "resolve_location": {
+          "location_name": "Maui"
+        },
+        "openeo_parse_temporal": {
+          "description": "August 2023"
+        },
+        "openeo_algorithm": {
+          "algorithm": "burn_severity",
+          "collection": "sentinel-2-l2a"
+        }
+      },
+      "acceptable_alternatives": [
+        [
+          "recommend_collection",
+          "resolve_location",
+          "openeo_parse_temporal",
+          "openeo_raw_graph",
+          "openeo_create_job",
+          "openeo_start_job",
+          "openeo_get_results",
+          "interpret_result"
+        ]
+      ],
+      "expected_outcome": {
+        "job_succeeded": true,
+        "expected_format": "GTiff",
+        "expected_bands": ["dnbr"],
+        "value_range": [-2.0, 2.0],
+        "has_spatial_extent": true,
+        "has_temporal_extent": true,
+        "min_tool_calls": 5,
+        "max_tool_calls": 14,
+        "required_capabilities": [
+          "location_resolution",
+          "temporal_resolution",
+          "graph_building",
+          "job_execution",
+          "result_retrieval"
+        ]
+      }
+    },
+    {
+      "query": "NDWI time series for Lake Chad 2020 to 2024",
+      "domain": "water",
+      "expected_tools": [
+        "recommend_collection",
+        "resolve_location",
+        "openeo_parse_temporal",
+        "openeo_compose_graph",
+        "openeo_create_job",
+        "openeo_start_job",
+        "openeo_get_results",
+        "temporal_trend_analysis"
+      ],
+      "expected_params": {
+        "resolve_location": {
+          "location_name": "Lake Chad"
+        },
+        "openeo_parse_temporal": {
+          "description": "2020 to 2024"
+        },
+        "openeo_compose_graph": {
+          "description": "NDWI time series",
+          "collection": "sentinel-2-l2a",
+          "index": "ndwi"
+        }
+      },
+      "acceptable_alternatives": [
+        [
+          "recommend_collection",
+          "resolve_location",
+          "openeo_parse_temporal",
+          "openeo_generate_graph",
+          "openeo_create_job",
+          "openeo_start_job",
+          "openeo_get_results",
+          "temporal_trend_analysis"
+        ]
+      ],
+      "expected_outcome": {
+        "job_succeeded": true,
+        "expected_format": "GTiff",
+        "expected_bands": ["ndwi"],
+        "value_range": [-1.0, 1.0],
+        "has_spatial_extent": true,
+        "has_temporal_extent": true,
+        "min_tool_calls": 4,
+        "max_tool_calls": 12,
+        "required_capabilities": [
+          "location_resolution",
+          "graph_building",
+          "job_execution",
+          "result_retrieval",
+          "interpretation"
+        ]
+      }
+    },
+    {
+      "query": "Compare urban growth Delhi 2019 vs 2024",
+      "domain": "urban",
+      "expected_tools": [
+        "recommend_collection",
+        "resolve_location",
+        "openeo_parse_temporal",
+        "openeo_algorithm",
+        "openeo_create_job",
+        "openeo_start_job",
+        "openeo_get_results",
+        "interpret_result"
+      ],
+      "expected_params": {
+        "resolve_location": {
+          "location_name": "Delhi"
+        },
+        "openeo_parse_temporal": {
+          "description": "2019 vs 2024"
+        },
+        "openeo_algorithm": {
+          "algorithm": "urban_growth",
+          "collection": "sentinel-2-l2a"
+        }
+      },
+      "acceptable_alternatives": [],
+      "expected_outcome": {
+        "job_succeeded": true,
+        "expected_format": "GTiff",
+        "expected_bands": ["ndbi"],
+        "value_range": [-1.0, 1.0],
+        "has_spatial_extent": true,
+        "has_temporal_extent": true,
+        "min_tool_calls": 5,
+        "max_tool_calls": 14,
+        "required_capabilities": [
+          "location_resolution",
+          "temporal_resolution",
+          "graph_building",
+          "job_execution",
+          "result_retrieval"
+        ]
+      }
+    },
+    {
+      "query": "Snow cover in Alps winter 2024",
+      "domain": "snow",
+      "expected_tools": [
+        "recommend_collection",
+        "resolve_location",
+        "openeo_parse_temporal",
+        "openeo_algorithm",
+        "openeo_create_job",
+        "openeo_start_job",
+        "openeo_get_results",
+        "viz_show_map"
+      ],
+      "expected_params": {
+        "resolve_location": {
+          "location_name": "Alps"
+        },
+        "openeo_parse_temporal": {
+          "description": "winter 2024"
+        },
+        "openeo_algorithm": {
+          "algorithm": "snow_cover",
+          "collection": "sentinel-2-l2a"
+        }
+      },
+      "acceptable_alternatives": [],
+      "expected_outcome": {
+        "job_succeeded": true,
+        "expected_format": "GTiff",
+        "expected_bands": ["ndsi"],
+        "value_range": [-1.0, 1.0],
+        "has_spatial_extent": true,
+        "has_temporal_extent": true,
+        "min_tool_calls": 5,
+        "max_tool_calls": 14,
+        "required_capabilities": [
+          "location_resolution",
+          "temporal_resolution",
+          "graph_building",
+          "job_execution",
+          "result_retrieval"
+        ]
+      }
+    },
+    {
+      "query": "What Sentinel-2 data is available for Paris?",
+      "domain": "discovery",
+      "expected_tools": [
+        "recommend_collection",
+        "resolve_location",
+        "openeo_search_collections",
+        "openeo_get_collection_info"
+      ],
+      "expected_params": {
+        "resolve_location": {
+          "location_name": "Paris"
+        }
+      },
+      "acceptable_alternatives": [
+        [
+          "resolve_location",
+          "openeo_search_collections",
+          "openeo_get_collection_info"
+        ],
+        [
+          "recommend_collection",
+          "resolve_location",
+          "openeo_list_collections",
+          "openeo_get_collection_info"
+        ]
+      ],
+      "expected_outcome": {
+        "job_succeeded": true,
+        "expected_format": "GTiff",
+        "expected_bands": [],
+        "has_spatial_extent": true,
+        "has_temporal_extent": false,
+        "min_tool_calls": 2,
+        "max_tool_calls": 6,
+        "required_capabilities": [
+          "location_resolution",
+          "collection_discovery"
+        ]
+      }
+    },
+    {
+      "query": "Cloud-free NDVI composite Mumbai monsoon 2024",
+      "domain": "vegetation",
+      "expected_tools": [
+        "recommend_collection",
+        "resolve_location",
+        "openeo_parse_temporal",
+        "openeo_generate_graph",
+        "openeo_create_job",
+        "openeo_start_job",
+        "openeo_get_results",
+        "result_inspect"
+      ],
+      "expected_params": {
+        "resolve_location": {
+          "location_name": "Mumbai"
+        },
+        "openeo_parse_temporal": {
+          "description": "monsoon 2024"
+        },
+        "openeo_generate_graph": {
+          "description": "NDVI",
+          "collection": "sentinel-2-l2a",
+          "cloud_mask": true
+        }
+      },
+      "acceptable_alternatives": [
+        [
+          "recommend_collection",
+          "resolve_location",
+          "openeo_parse_temporal",
+          "openeo_compose_graph",
+          "openeo_create_job",
+          "openeo_start_job",
+          "openeo_get_results",
+          "result_inspect"
+        ]
+      ],
+      "expected_outcome": {
+        "job_succeeded": true,
+        "expected_format": "GTiff",
+        "expected_bands": ["ndvi"],
+        "value_range": [-1.0, 1.0],
+        "has_spatial_extent": true,
+        "has_temporal_extent": true,
+        "min_tool_calls": 4,
+        "max_tool_calls": 12,
+        "required_capabilities": [
+          "location_resolution",
+          "graph_building",
+          "job_execution",
+          "result_retrieval"
+        ]
+      }
+    },
+    {
+      "query": "EVI for Amazon rainforest deforestation 2023",
+      "domain": "vegetation",
+      "expected_tools": [
+        "recommend_collection",
+        "resolve_location",
+        "openeo_parse_temporal",
+        "openeo_generate_graph",
+        "openeo_create_job",
+        "openeo_start_job",
+        "openeo_get_results",
+        "interpret_result"
+      ],
+      "expected_params": {
+        "resolve_location": {
+          "location_name": "Amazon"
+        },
+        "openeo_parse_temporal": {
+          "description": "2023"
+        },
+        "openeo_generate_graph": {
+          "description": "EVI",
+          "collection": "sentinel-2-l2a",
+          "cloud_mask": true
+        }
+      },
+      "acceptable_alternatives": [
+        [
+          "recommend_collection",
+          "resolve_location",
+          "openeo_parse_temporal",
+          "openeo_compose_graph",
+          "openeo_create_job",
+          "openeo_start_job",
+          "openeo_get_results",
+          "interpret_result"
+        ]
+      ],
+      "expected_outcome": {
+        "job_succeeded": true,
+        "expected_format": "GTiff",
+        "expected_bands": ["evi"],
+        "value_range": [-1.0, 1.0],
+        "has_spatial_extent": true,
+        "has_temporal_extent": true,
+        "min_tool_calls": 4,
+        "max_tool_calls": 12,
+        "required_capabilities": [
+          "location_resolution",
+          "graph_building",
+          "job_execution",
+          "result_retrieval"
+        ]
+      }
+    },
+    {
+      "query": "Monthly NDVI trend Sahel region 2024",
+      "domain": "vegetation",
+      "expected_tools": [
+        "recommend_collection",
+        "resolve_location",
+        "openeo_parse_temporal",
+        "openeo_compose_graph",
+        "openeo_create_job",
+        "openeo_start_job",
+        "openeo_get_results",
+        "temporal_trend_analysis"
+      ],
+      "expected_params": {
+        "resolve_location": {
+          "location_name": "Sahel"
+        },
+        "openeo_parse_temporal": {
+          "description": "2024"
+        },
+        "openeo_compose_graph": {
+          "description": "Monthly NDVI",
+          "collection": "sentinel-2-l2a",
+          "index": "ndvi"
+        }
+      },
+      "acceptable_alternatives": [
+        [
+          "recommend_collection",
+          "resolve_location",
+          "openeo_parse_temporal",
+          "openeo_generate_graph",
+          "openeo_create_job",
+          "openeo_start_job",
+          "openeo_get_results",
+          "temporal_trend_analysis"
+        ]
+      ],
+      "expected_outcome": {
+        "job_succeeded": true,
+        "expected_format": "GTiff",
+        "expected_bands": ["ndvi"],
+        "value_range": [-1.0, 1.0],
+        "has_spatial_extent": true,
+        "has_temporal_extent": true,
+        "min_tool_calls": 4,
+        "max_tool_calls": 12,
+        "required_capabilities": [
+          "location_resolution",
+          "graph_building",
+          "job_execution",
+          "result_retrieval",
+          "interpretation"
+        ]
+      }
+    }
+  ]
+}

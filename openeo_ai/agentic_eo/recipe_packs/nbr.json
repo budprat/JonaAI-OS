@@ -1,0 +1,13 @@
+{
+  "variable": "nbr",
+  "recipe_version": 1,
+  "thresholds": {
+    "burn_ceiling": {
+      "value": 0.1,
+      "unit": "index_value",
+      "comparator": "<",
+      "applies_at": "report.actions",
+      "source": "report.py recent-burn gate"
+    }
+  }
+}

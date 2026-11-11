@@ -1,0 +1,37 @@
+# OpenEO FastAPI Requirements
+
+# Testing
+pytest>=7.4.0
+pytest-asyncio>=0.21.0
+pytest-mock>=3.12.0
+pytest-cov>=4.1.0
+
+# Validation
+jsonschema>=4.20.0
+
+# Scientific computing (for uncertainty quantification)
+scipy>=1.11.0
+
+# Claude Agent SDK (installed with --no-deps; mcp shim in venv provides stubs)
+# Note: Do NOT pip install mcp - it requires pydantic>=2 which conflicts with openeo-fastapi
+claude-agent-sdk>=0.1.31
+anthropic
+fastapi
+jsonschema
+pydantic
+scipy
+uvicorn
+websockets
+claude-agent-sdk
+aiohttp
+alembic
+joblib
+psycopg2-binary
+# python-jose is a hard dependency of the vendored openeo-fastapi
+# (openeo_fastapi/client/auth.py: `from jose import jwt`). Pinned to 3.5.0,
+# which patches CVE-2024-33663/CVE-2024-33664 (fixed in 3.4.0). The
+# [cryptography] extra also satisfies PyJWT's ES256/RS256 (Supabase) path.
+python-jose[cryptography]==3.5.0
+PyJWT==2.11.0
+requests
+sqlalchemy

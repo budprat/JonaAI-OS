@@ -1,0 +1,62 @@
+# ABOUTME: Test + build CI for every push to main and every PR: backend pytest
+# ABOUTME: suite, frontend vitest suite, and the production frontend build.
+#
+# Deliberately secret-free: backend tests are hermetic (SQLite :memory: via
+# conftest, OPENEO_DEV_MODE, no network). If a step here ever needs a secret,
+# the design is wrong. Deps come from requirements-ci.txt — an exact freeze of
+# the known-good venv (Python 3.14). requirements-local.txt
+# had drifted from that venv (wrong xarray/numpy, missing pytest/pytest-asyncio)
+# so a fresh resolve from it fails; requirements.txt is even staler.
+
+name: Tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: tests-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  backend:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.14"
+          cache: pip
+          cache-dependency-path: requirements-ci.txt
+      # --no-deps: requirements-ci.txt is a complete closure (no resolution).
+      # --ignore-requires-python: pg-parser/processes-dask cap Python below 3.14
+      # in metadata but run fine. openeo-fastapi comes via PYTHONPATH, not pip.
+      - run: pip install --no-deps --ignore-requires-python -r requirements-ci.txt
+      - name: Run backend suite
+        env:
+          OPENEO_DEV_MODE: "true"
+          PYTHONPATH: ${{ github.workspace }}:${{ github.workspace }}/openeo-fastapi
+          ALEMBIC_DIR: ${{ github.workspace }}/openeo_app/psql
+        run: python -m pytest openeo_ai/tests openeo_ai/batch/tests -q
+
+  frontend:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: openeo_ai/frontend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: openeo_ai/frontend/package-lock.json
+      - run: npm ci
+      - run: npm run test:run
+      - run: npm run build

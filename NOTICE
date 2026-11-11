@@ -1,0 +1,24 @@
+JonaAI
+Copyright 2026 The JonaAI Authors
+
+This product includes software developed by others:
+
+- openeo-fastapi (vendored in openeo-fastapi/), Copyright Sean Hoyal and
+  contributors, licensed under the Apache License, Version 2.0.
+  See openeo-fastapi/LICENSE. The JonaAI Authors modified these files
+  (Pydantic v2 support, database table names, settings, and auth for local
+  development); each carries a notice saying so:
+    openeo_fastapi/api/models.py, openeo_fastapi/api/types.py,
+    openeo_fastapi/client/auth.py, openeo_fastapi/client/collections.py,
+    openeo_fastapi/client/jobs.py, openeo_fastapi/client/processes.py,
+    openeo_fastapi/client/psql/engine.py, openeo_fastapi/client/psql/models.py,
+    openeo_fastapi/client/psql/settings.py, openeo_fastapi/client/settings.py,
+    pyproject.toml
+
+- Graph validation and the structured compute framework in
+  openeo_ai/validation/ are ported from openeo-fastapi-STAC, a derivative of
+  openeo-fastapi, under the Apache License, Version 2.0.
+
+- openeo_ai/frontend/src/hooks/use-toast.ts is adapted from shadcn/ui
+  (https://ui.shadcn.com), Copyright (c) 2023 shadcn, licensed under the
+  MIT License.

@@ -1,0 +1,5 @@
+{
+  "scene_gate": {
+    "min_valid_fraction": 0.5
+  }
+}

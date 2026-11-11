@@ -1,0 +1,13 @@
+{
+  "variable": "ndmi",
+  "recipe_version": 1,
+  "thresholds": {
+    "moisture_deficit_delta": {
+      "value": -0.05,
+      "unit": "index_delta",
+      "comparator": "<",
+      "applies_at": "report.actions",
+      "source": "report.py moisture-deficit gate"
+    }
+  }
+}

@@ -1,0 +1,213 @@
+# ABOUTME: CI workflow — runs the JonaAI golden dataset through Langfuse on every PR.
+#
+# Gates PRs on LLM quality regression. Requires these GitHub secrets:
+#   LANGFUSE_PUBLIC_KEY
+#   LANGFUSE_SECRET_KEY
+#   ANTHROPIC_API_KEY
+#   SUPABASE_JWT_SECRET    (for Supabase JWT verification in backend auth)
+#   SUPABASE_URL
+#   SUPABASE_ANON_KEY
+#   SUPABASE_SERVICE_ROLE_KEY
+#   POSTGRES_PASSWORD      (URL-encoded)
+#
+# The experiment runs against US-cloud Langfuse so all traces/scores/dataset
+# items live in one place. The regression gate compares the PR-tagged run
+# against the `production-v2` tag (populated by the scheduled nightly run on
+# main). v2 cut 2026-07-23: the original `production` tag blended
+# pre-slim trace history into the baseline; the fresh tag snapshots post-slim
+# behavior only. Bootstrap after a tag cut: workflow_dispatch with
+# experiment_name=production-v2.
+#
+# SECURITY NOTE: user-provided inputs (workflow_dispatch.inputs,
+# github.event.*) are read into env vars before use in shell commands
+# to prevent command injection via YAML interpolation.
+
+name: Langfuse Evals
+
+on:
+  pull_request:
+    paths:
+      - "openeo_ai/sdk/**"
+      - "openeo_ai/tools/**"
+      - "openeo_ai/evals/**"
+      - "openeo_ai/langfuse_setup.py"
+      - ".github/workflows/evals.yml"
+  workflow_dispatch:
+    inputs:
+      experiment_name:
+        description: "Experiment name (default: manual-<run_id>)"
+        required: false
+  schedule:
+    - cron: "0 6 * * *"  # 06:00 UTC nightly → bootstraps/refreshes the production baseline
+
+permissions:
+  contents: read
+
+jobs:
+  # Gate: the golden-dataset run needs ANTHROPIC_API_KEY (and Langfuse) secrets.
+  # Without them the job can only fail at import/install, which nags every PR
+  # that touches agent-core files. Job-level `if:` can't read secrets, so a tiny
+  # gate job exposes their presence as an output; run-evals SKIPS (neutral, not
+  # red) when they are absent.
+  check-secrets:
+    runs-on: ubuntu-latest
+    outputs:
+      enabled: ${{ steps.check.outputs.enabled }}
+    steps:
+      - id: check
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: |
+          if [ -n "$ANTHROPIC_API_KEY" ]; then
+            echo "enabled=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "enabled=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::ANTHROPIC_API_KEY not configured — skipping golden-dataset evals."
+          fi
+
+  run-evals:
+    name: Golden dataset regression check
+    needs: check-secrets
+    if: ${{ needs.check-secrets.outputs.enabled == 'true' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      # The Langfuse-link PR comment posts via the issues API; the default
+      # token is read-only here, which failed the comment step on every run.
+      issues: write
+      pull-requests: write
+
+    env:
+      # Langfuse (observability)
+      LANGFUSE_PUBLIC_KEY: ${{ secrets.LANGFUSE_PUBLIC_KEY }}
+      LANGFUSE_SECRET_KEY: ${{ secrets.LANGFUSE_SECRET_KEY }}
+      LANGFUSE_HOST: https://us.cloud.langfuse.com
+      LANGFUSE_BASE_URL: https://us.cloud.langfuse.com
+      LANGSMITH_OTEL_ENABLED: "true"
+      LANGSMITH_OTEL_ONLY: "true"
+      LANGSMITH_TRACING: "true"
+
+      # Anthropic (Claude SDK + LLM-as-judge)
+      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+
+      # Supabase (backend auth — not hit during evals but needed at import)
+      SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+      SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+      SUPABASE_JWT_SECRET: ${{ secrets.SUPABASE_JWT_SECRET }}
+
+      # Postgres (used by import-time models in openeo-fastapi)
+      POSTGRES_USER: ${{ secrets.POSTGRES_USER }}
+      POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
+      POSTGRESQL_HOST: ${{ secrets.POSTGRESQL_HOST }}
+      POSTGRESQL_PORT: ${{ secrets.POSTGRESQL_PORT }}
+      POSTGRES_DB: ${{ secrets.POSTGRES_DB }}
+
+      # JonaAI runtime flags
+      OPENEO_DEV_MODE: "true"
+      OPENEO_SDK_BACKEND: claude_sdk
+      PYTHONPATH: ${{ github.workspace }}:${{ github.workspace }}/openeo-fastapi
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.14
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.14"
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v4
+
+      - name: Install dependencies
+        run: |
+          uv pip install --system -r requirements-local.txt
+          uv pip install --system --no-deps -e ./openeo-fastapi
+          # plain pip: uv dropped --ignore-requires-python; these two cap
+          # Python below 3.14 (same reason/pattern as tests.yml)
+          pip install --no-deps --ignore-requires-python "openeo-pg-parser-networkx>=2024.1.1"
+          pip install --no-deps --ignore-requires-python "openeo-processes-dask>=2025.5.1"
+
+      - name: Compute experiment tag
+        id: tagname
+        env:
+          # Safe: PR number is always an integer controlled by GitHub
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          EVENT_NAME: ${{ github.event_name }}
+          # UNTRUSTED: user-provided input — read into env, validated below
+          REQUESTED_NAME: ${{ github.event.inputs.experiment_name }}
+          RUN_ID: ${{ github.run_id }}
+        run: |
+          set -euo pipefail
+          if [ "$EVENT_NAME" = "pull_request" ]; then
+            TAG="pr-${PR_NUMBER}"
+          elif [ "$EVENT_NAME" = "schedule" ]; then
+            TAG="production-v2"
+          elif [ -n "${REQUESTED_NAME:-}" ]; then
+            # Sanitize: only allow alphanumerics, dash, underscore
+            SAFE_NAME=$(echo "$REQUESTED_NAME" | tr -cd '[:alnum:]_-' | head -c 50)
+            if [ -z "$SAFE_NAME" ]; then
+              SAFE_NAME="manual-${RUN_ID}"
+            fi
+            TAG="$SAFE_NAME"
+          else
+            TAG="manual-${RUN_ID}"
+          fi
+          echo "tag=${TAG}" >> "$GITHUB_OUTPUT"
+          echo "Computed experiment tag: ${TAG}"
+
+      - name: Run golden dataset experiment
+        env:
+          EXPERIMENT_TAG: ${{ steps.tagname.outputs.tag }}
+        run: |
+          # --skip-execution: CI runs no openeo backend;
+          # execution truth is pinned by the pixel-truth fixtures in tests.yml.
+          python -m openeo_ai.evals.run_experiment \
+            --experiment "$EXPERIMENT_TAG" \
+            --skip-execution \
+            --json-out /tmp/experiment-results.json
+
+      - name: Gate on regression vs production baseline
+        if: ${{ github.event_name == 'pull_request' }}
+        env:
+          EXPERIMENT_TAG: ${{ steps.tagname.outputs.tag }}
+        run: |
+          python -m openeo_ai.evals.assert_no_regression \
+            --baseline production-v2 \
+            --current "$EXPERIMENT_TAG" \
+            --threshold 0.05
+
+      - name: Upload experiment summary
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: experiment-results-${{ steps.tagname.outputs.tag }}
+          path: /tmp/experiment-results.json
+          retention-days: 30
+
+      - name: Comment PR with Langfuse link
+        if: ${{ github.event_name == 'pull_request' && always() }}
+        uses: actions/github-script@v7
+        env:
+          # Pass the tag via env so it can't be used for script injection
+          EXPERIMENT_TAG: ${{ steps.tagname.outputs.tag }}
+        with:
+          script: |
+            const tag = process.env.EXPERIMENT_TAG;
+            const body = [
+              "### 🔬 Langfuse Evals",
+              "",
+              "Experiment: `" + tag + "`",
+              "View traces: https://us.cloud.langfuse.com/project/_/traces?tags=" + encodeURIComponent(tag),
+              "View dataset: https://us.cloud.langfuse.com/project/_/datasets/jonaai-golden-v1",
+              "",
+              "See the workflow run for pass/fail details and the full experiment-results.json artifact.",
+            ].join("\n");
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body,
+            });

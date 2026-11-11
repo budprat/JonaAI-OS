@@ -1,0 +1,34 @@
+{
+  "variable": "ndvi",
+  "recipe_version": 1,
+  "thresholds": {
+    "stress_dispatch_delta": {
+      "value": -0.20,
+      "unit": "index_delta",
+      "comparator": "<=",
+      "applies_at": "report.actions",
+      "source": "report.py stress-dispatch gate"
+    },
+    "scout_flag_delta": {
+      "value": -0.10,
+      "unit": "index_delta",
+      "comparator": "<=",
+      "applies_at": "report.actions",
+      "source": "report.py scout-flag + phenology-guard gate"
+    },
+    "healthy_greenup_delta": {
+      "value": 0.05,
+      "unit": "index_delta",
+      "comparator": ">=",
+      "applies_at": "report.actions",
+      "source": "report.py healthy-greenup gate"
+    },
+    "degrade_slope_per_year": {
+      "value": -0.005,
+      "unit": "index_slope_per_year",
+      "comparator": "<=",
+      "applies_at": "report.actions",
+      "source": "report.py multi-year degradation-review gate"
+    }
+  }
+}
